@@ -1,0 +1,402 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  LEAVE
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  OTHER
+}
+
+enum AnnouncementType {
+  GENERAL
+  URGENT
+  EVENT
+  ACADEMIC
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+  GRADUATED
+}
+
+// ========================
+// USERS
+// ========================
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  role          Role      @default(STUDENT)
+  name          String
+  phone         String?
+  avatarUrl     String?   @map("avatar_url")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  teacher       Teacher?
+  student       Student?
+  announcements Announcement[]
+  notifications Notification[]
+  events        Event[]
+
+  @@map("users")
+}
+
+// ========================
+// SCHOOL SETTINGS
+// ========================
+model SchoolSetting {
+  id          Int     @id @default(autoincrement())
+  name        String
+  logoUrl     String? @map("logo_url")
+  address     String? @db.Text
+  phone       String?
+  email       String?
+  website     String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("school_settings")
+}
+
+// ========================
+// ACADEMIC YEARS
+// ========================
+model AcademicYear {
+  id        Int      @id @default(autoincrement())
+  year      String   // e.g. "2567"
+  semester  Int      // 1 or 2
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  isActive  Boolean  @default(false) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  classrooms     Classroom[]
+  gradeRecords   GradeRecord[]
+  schedules      Schedule[]
+  feeTypes       FeeType[]
+
+  @@map("academic_years")
+}
+
+// ========================
+// GRADES (ระดับชั้น)
+// ========================
+model Grade {
+  id         Int         @id @default(autoincrement())
+  name       String      // ป.1, ป.2, ม.1, etc.
+  level      Int         // 1-12
+  section    String?     // ก, ข, ค
+  classrooms Classroom[]
+
+  @@map("grades")
+}
+
+// ========================
+// CLASSROOMS
+// ========================
+model Classroom {
+  id             Int          @id @default(autoincrement())
+  name           String       // ป.1/1, ม.3/2
+  gradeId        Int          @map("grade_id")
+  academicYearId Int          @map("academic_year_id")
+  teacherId      Int?         @map("teacher_id") // homeroom teacher
+  capacity       Int          @default(40)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  grade          Grade        @relation(fields: [gradeId], references: [id])
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  teacher        Teacher?     @relation(fields: [teacherId], references: [id])
+  students       Student[]
+  schedules      Schedule[]
+
+  @@map("classrooms")
+}
+
+// ========================
+// STUDENTS
+// ========================
+model Student {
+  id            Int           @id @default(autoincrement())
+  studentCode   String        @unique @map("student_code")
+  userId        String?       @unique @map("user_id")
+  classroomId   Int?          @map("classroom_id")
+  firstName     String        @map("first_name")
+  lastName      String        @map("last_name")
+  firstNameEn   String?       @map("first_name_en")
+  lastNameEn    String?       @map("last_name_en")
+  dob           DateTime?
+  gender        Gender?
+  nationalId    String?       @map("national_id")
+  address       String?       @db.Text
+  bloodType     String?       @map("blood_type")
+  photoUrl      String?       @map("photo_url")
+  parentName    String?       @map("parent_name")
+  parentPhone   String?       @map("parent_phone")
+  parentEmail   String?       @map("parent_email")
+  parentLine    String?       @map("parent_line")
+  enrollDate    DateTime?     @map("enroll_date")
+  status        StudentStatus @default(ACTIVE)
+  note          String?       @db.Text
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  user          User?         @relation(fields: [userId], references: [id])
+  classroom     Classroom?    @relation(fields: [classroomId], references: [id])
+  attendances   Attendance[]
+  gradeRecords  GradeRecord[]
+  payments      PaymentRecord[]
+
+  @@map("students")
+}
+
+// ========================
+// TEACHERS
+// ========================
+model Teacher {
+  id            Int        @id @default(autoincrement())
+  teacherCode   String     @unique @map("teacher_code")
+  userId        String     @unique @map("user_id")
+  firstName     String     @map("first_name")
+  lastName      String     @map("last_name")
+  firstNameEn   String?    @map("first_name_en")
+  lastNameEn    String?    @map("last_name_en")
+  dob           DateTime?
+  gender        Gender?
+  phone         String?
+  address       String?    @db.Text
+  qualification String?
+  position      String?
+  department    String?
+  specialization String?
+  joinDate      DateTime?  @map("join_date")
+  photoUrl      String?    @map("photo_url")
+  isActive      Boolean    @default(true) @map("is_active")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  user          User       @relation(fields: [userId], references: [id])
+  classrooms    Classroom[]
+  schedules     Schedule[]
+  gradeRecords  GradeRecord[]
+
+  @@map("teachers")
+}
+
+// ========================
+// SUBJECTS
+// ========================
+model Subject {
+  id          Int        @id @default(autoincrement())
+  code        String     @unique
+  name        String
+  nameEn      String?    @map("name_en")
+  description String?    @db.Text
+  credits     Float      @default(1)
+  gradeLevel  Int?       @map("grade_level") // 1-12, null = all
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  schedules    Schedule[]
+  gradeRecords GradeRecord[]
+
+  @@map("subjects")
+}
+
+// ========================
+// SCHEDULES (ตารางเรียน/สอน)
+// ========================
+model Schedule {
+  id             Int          @id @default(autoincrement())
+  classroomId    Int          @map("classroom_id")
+  subjectId      Int          @map("subject_id")
+  teacherId      Int          @map("teacher_id")
+  academicYearId Int          @map("academic_year_id")
+  dayOfWeek      Int          @map("day_of_week") // 1=Mon, 5=Fri
+  startTime      String       @map("start_time") // "08:00"
+  endTime        String       @map("end_time")   // "09:00"
+  roomNumber     String?      @map("room_number")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  classroom      Classroom    @relation(fields: [classroomId], references: [id])
+  subject        Subject      @relation(fields: [subjectId], references: [id])
+  teacher        Teacher      @relation(fields: [teacherId], references: [id])
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  attendances    Attendance[]
+
+  @@map("schedules")
+}
+
+// ========================
+// ATTENDANCE
+// ========================
+model Attendance {
+  id          Int              @id @default(autoincrement())
+  studentId   Int              @map("student_id")
+  scheduleId  Int?             @map("schedule_id")
+  date        DateTime         @db.Date
+  status      AttendanceStatus @default(PRESENT)
+  note        String?
+  recordedBy  Int?             @map("recorded_by")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  student     Student          @relation(fields: [studentId], references: [id])
+  schedule    Schedule?        @relation(fields: [scheduleId], references: [id])
+
+  @@unique([studentId, scheduleId, date])
+  @@map("attendances")
+}
+
+// ========================
+// GRADE RECORDS
+// ========================
+model GradeRecord {
+  id              Int          @id @default(autoincrement())
+  studentId       Int          @map("student_id")
+  subjectId       Int          @map("subject_id")
+  teacherId       Int?         @map("teacher_id")
+  academicYearId  Int          @map("academic_year_id")
+  scoreMidterm    Float?       @map("score_midterm")
+  scoreFinal      Float?       @map("score_final")
+  scoreActivity   Float?       @map("score_activity")
+  totalScore      Float?       @map("total_score")
+  gradeLetter     String?      @map("grade_letter")
+  gpa             Float?
+  remark          String?
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  student         Student      @relation(fields: [studentId], references: [id])
+  subject         Subject      @relation(fields: [subjectId], references: [id])
+  teacher         Teacher?     @relation(fields: [teacherId], references: [id])
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  @@unique([studentId, subjectId, academicYearId])
+  @@map("grade_records")
+}
+
+// ========================
+// FEE TYPES
+// ========================
+model FeeType {
+  id             Int          @id @default(autoincrement())
+  name           String
+  amount         Decimal      @db.Decimal(10, 2)
+  description    String?
+  academicYearId Int?         @map("academic_year_id")
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
+  payments       PaymentRecord[]
+
+  @@map("fee_types")
+}
+
+// ========================
+// PAYMENT RECORDS
+// ========================
+model PaymentRecord {
+  id            Int           @id @default(autoincrement())
+  studentId     Int           @map("student_id")
+  feeTypeId     Int           @map("fee_type_id")
+  amountPaid    Decimal       @map("amount_paid") @db.Decimal(10, 2)
+  paymentDate   DateTime      @map("payment_date")
+  receiptNo     String?       @unique @map("receipt_no")
+  paymentMethod PaymentMethod @default(CASH) @map("payment_method")
+  receivedBy    Int?          @map("received_by")
+  note          String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  student       Student       @relation(fields: [studentId], references: [id])
+  feeType       FeeType       @relation(fields: [feeTypeId], references: [id])
+
+  @@map("payment_records")
+}
+
+// ========================
+// ANNOUNCEMENTS
+// ========================
+model Announcement {
+  id          Int              @id @default(autoincrement())
+  title       String
+  content     String           @db.Text
+  type        AnnouncementType @default(GENERAL)
+  targetRole  String?          @map("target_role") // null = all
+  authorId    String           @map("author_id")
+  isPinned    Boolean          @default(false) @map("is_pinned")
+  startDate   DateTime?        @map("start_date")
+  endDate     DateTime?        @map("end_date")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  author      User             @relation(fields: [authorId], references: [id])
+
+  @@map("announcements")
+}
+
+// ========================
+// EVENTS / CALENDAR
+// ========================
+model Event {
+  id            Int      @id @default(autoincrement())
+  title         String
+  description   String?  @db.Text
+  startDatetime DateTime @map("start_datetime")
+  endDatetime   DateTime @map("end_datetime")
+  location      String?
+  color         String   @default("#4F46E5")
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  creator       User     @relation(fields: [createdBy], references: [id])
+
+  @@map("events")
+}
+
+// ========================
+// NOTIFICATIONS
+// ========================
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id")
+  title     String
+  message   String   @db.Text
+  type      String   @default("info")
+  isRead    Boolean  @default(false) @map("is_read")
+  link      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
