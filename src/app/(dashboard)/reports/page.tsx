@@ -26,7 +26,7 @@ export default function ReportsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">รายงานและสถิติ</h1>
-          <p className="text-slate-500 text-sm mt-1">ปีการศึกษา 2567</p>
+          <p className="text-slate-500 text-sm mt-1">ปีการศึกษา 2569</p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors shadow-sm w-fit">
           <Download className="w-4 h-4" />

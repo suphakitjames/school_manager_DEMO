@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pin, Calendar, Search, X, Save, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pin, Calendar, Search, X, Save, Pencil, Trash2, Sparkles } from "lucide-react";
+import { SimpleRichTextEditor, renderRichText } from "./SimpleRichTextEditor";
 
 type Announcement = {
   id: number;
@@ -143,13 +144,23 @@ export default function AnnouncementsPage() {
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">ไม่พบประกาศ</div>
         ) : (
-          filtered.map(a => {
+          filtered.map((a, index) => {
             const t = typeMap[a.type] ?? typeMap.GENERAL;
+            const isNew = new Date(a.createdAt).getTime() > Date.now() - 3 * 24 * 60 * 60 * 1000;
             return (
-              <div key={a.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div 
+                key={a.id} 
+                className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 p-5 animate-in slide-in-from-bottom-4 fade-in"
+                style={{ animationDelay: `${index * 50}ms`, animationFillMode: "both" }}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-2">
+                      {isNew && (
+                        <span className="flex items-center gap-1 text-xs text-white bg-gradient-to-r from-indigo-500 to-violet-500 px-2 py-0.5 rounded-full font-bold shadow-sm animate-pulse">
+                          <Sparkles className="w-3 h-3 text-yellow-200" /> ใหม่
+                        </span>
+                      )}
                       {a.isPinned && (
                         <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">
                           <Pin className="w-3 h-3" /> ปักหมุด
@@ -162,9 +173,11 @@ export default function AnnouncementsPage() {
                         </span>
                       )}
                     </div>
-                    <h3 className="font-semibold text-slate-800 text-base">{a.title}</h3>
-                    <p className="text-sm text-slate-500 mt-1 leading-relaxed line-clamp-2">{a.content}</p>
-                    <div className="flex items-center gap-3 mt-3 text-xs text-slate-400">
+                    <h3 className="font-bold text-slate-800 text-lg">{a.title}</h3>
+                    <div className="mt-2.5 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                      {renderRichText(a.content)}
+                    </div>
+                    <div className="flex items-center gap-3 mt-4 text-xs text-slate-400 font-medium">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
                         {formatDate(a.createdAt)}
@@ -189,8 +202,8 @@ export default function AnnouncementsPage() {
 
       {/* Modal */}
       {modalMode && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto ring-1 ring-slate-200 translate-y-0 scale-100 opacity-100">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white">
               <h2 className="font-semibold text-slate-800">{modalMode === "add" ? "สร้างประกาศใหม่" : "แก้ไขประกาศ"}</h2>
               <button onClick={() => setModalMode(null)} className="p-1 rounded-lg hover:bg-slate-100">
@@ -227,9 +240,11 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">เนื้อหา *</label>
-                <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))}
-                  rows={5} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">เนื้อหา *</label>
+                <SimpleRichTextEditor 
+                  value={form.content} 
+                  onChange={(val) => setForm(p => ({ ...p, content: val }))} 
+                />
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.isPinned} onChange={e => setForm(p => ({ ...p, isPinned: e.target.checked }))}

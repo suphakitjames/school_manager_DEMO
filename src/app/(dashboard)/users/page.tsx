@@ -1,12 +1,12 @@
 import { Search, Plus, Filter, Pencil, Trash2, Shield } from "lucide-react";
 
 const mockUsers = [
-  { id: 1, name: "นาย สมศักดิ์ วิชาการ", email: "admin@school.ac.th", role: "SUPER_ADMIN", lastLogin: "23 ก.พ. 2567", status: "ใช้งาน" },
-  { id: 2, name: "นาง สมใจ บริหาร", email: "admin2@school.ac.th", role: "ADMIN", lastLogin: "23 ก.พ. 2567", status: "ใช้งาน" },
-  { id: 3, name: "นาย วิชัย สอนดี", email: "teacher@school.ac.th", role: "TEACHER", lastLogin: "22 ก.พ. 2567", status: "ใช้งาน" },
-  { id: 4, name: "นางสาว ปิยะ เก่งกล้า", email: "teacher2@school.ac.th", role: "TEACHER", lastLogin: "21 ก.พ. 2567", status: "ใช้งาน" },
-  { id: 5, name: "ด.ช. สมชาย ใจดี", email: "student@school.ac.th", role: "STUDENT", lastLogin: "20 ก.พ. 2567", status: "ใช้งาน" },
-  { id: 6, name: "นาย สมพร รักบุตร", email: "parent@school.ac.th", role: "PARENT", lastLogin: "18 ก.พ. 2567", status: "ระงับ" },
+  { id: 1, name: "นาย สมศักดิ์ วิชาการ", email: "admin@school.ac.th", role: "SUPER_ADMIN", lastLogin: "23 ก.พ. 2569", status: "ใช้งาน" },
+  { id: 2, name: "นาง สมใจ บริหาร", email: "admin2@school.ac.th", role: "ADMIN", lastLogin: "23 ก.พ. 2569", status: "ใช้งาน" },
+  { id: 3, name: "นาย วิชัย สอนดี", email: "teacher@school.ac.th", role: "TEACHER", lastLogin: "22 ก.พ. 2569", status: "ใช้งาน" },
+  { id: 4, name: "นางสาว ปิยะ เก่งกล้า", email: "teacher2@school.ac.th", role: "TEACHER", lastLogin: "21 ก.พ. 2569", status: "ใช้งาน" },
+  { id: 5, name: "ด.ช. สมชาย ใจดี", email: "student@school.ac.th", role: "STUDENT", lastLogin: "20 ก.พ. 2569", status: "ใช้งาน" },
+  { id: 6, name: "นาย สมพร รักบุตร", email: "parent@school.ac.th", role: "PARENT", lastLogin: "18 ก.พ. 2569", status: "ระงับ" },
 ];
 
 const roleConfig: Record<string, { label: string; badge: string; icon: string }> = {

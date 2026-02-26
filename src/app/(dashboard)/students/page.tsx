@@ -100,6 +100,35 @@ export default function StudentsPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    // CSV Header with BOM for Thai Excel support
+    const headers = ["รหัสนักเรียน", "ชื่อ-นามสกุล", "เพศ", "สถานะ", "ห้องเรียน", "ชื่อผู้ปกครอง", "เบอร์โทรผู้ปกครอง"];
+    
+    const rows = students.map(s => [
+      s.studentCode,
+      `${s.firstName} ${s.lastName}`,
+      genderMap[s.gender ?? ""] ?? "ไม่ระบุ",
+      statusMap[s.status]?.label ?? s.status,
+      s.classroom?.name ?? "ไม่ระบุ",
+      s.parentName ?? "-",
+      s.parentPhone ?? "-"
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(r => r.map(field => `"${field}"`).join(",")) // wrap in quotes to handle inner commas
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `students_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -143,10 +172,7 @@ export default function StudentsPage() {
             <option value="TRANSFERRED">ย้ายโรงเรียน</option>
             <option value="GRADUATED">จบการศึกษา</option>
           </select>
-          <button className="flex items-center gap-2 px-4 py-2.5 text-sm border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50">
-            <Filter className="w-4 h-4" /> กรองเพิ่มเติม
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 text-sm border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50">
+          <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2.5 text-sm border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50">
             <Download className="w-4 h-4" /> Export
           </button>
         </div>

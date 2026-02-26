@@ -132,7 +132,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-4">
-          © 2567 ระบบบริหารจัดการโรงเรียน v1.0
+          © 2569 ระบบบริหารจัดการโรงเรียน v1.0
         </p>
       </div>
     </div>

@@ -84,7 +84,7 @@ export default function SettingsPage() {
       {/* Quick Setting Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { icon: Database, label: "ปีการศึกษาปัจจุบัน", value: "2567 ภาคเรียนที่ 2", action: "เปลี่ยน", color: "emerald" },
+          { icon: Database, label: "ปีการศึกษาปัจจุบัน", value: "2569 ภาคเรียนที่ 2", action: "เปลี่ยน", color: "emerald" },
           { icon: Users, label: "จำนวนผู้ใช้งาน", value: "86 ครู + 12 Admin", action: "จัดการ", color: "violet" },
           { icon: Bell, label: "การแจ้งเตือน Email", value: "เปิดใช้งาน", action: "ตั้งค่า", color: "amber" },
         ].map((card) => {
