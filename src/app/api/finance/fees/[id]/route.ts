@@ -3,10 +3,11 @@ import prisma from "@/lib/db";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
+    const { id: paramId } = await params;
+    const id = Number(paramId);
     const { isActive } = await req.json();
 
     const updatedFee = await prisma.feeType.update({
