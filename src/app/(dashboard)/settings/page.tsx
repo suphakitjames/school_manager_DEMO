@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { School, Save, Database, Users, Bell, RefreshCw, CheckCircle2 } from "lucide-react";
 import AcademicYearTab from "@/components/settings/AcademicYearTab";
+import NotificationTab from "@/components/settings/NotificationTab";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -319,12 +320,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {activeTab === "การแจ้งเตือน" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center text-slate-500">
-          <Bell className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p>ระบบตั้งค่าการแจ้งเตือนกำลังอยู่ในระหว่างการพัฒนา</p>
-        </div>
-      )}
+      {activeTab === "การแจ้งเตือน" && <NotificationTab />}
 
       {activeTab === "ระบบ" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center text-slate-500">

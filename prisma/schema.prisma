@@ -89,6 +89,32 @@ model SchoolSetting {
 }
 
 // ========================
+// NOTIFICATION SETTINGS
+// ========================
+model NotificationSetting {
+  id                  Int      @id @default(autoincrement())
+  emailEnabled        Boolean  @default(false) @map("email_enabled")
+  lineEnabled         Boolean  @default(false) @map("line_enabled")
+  smsEnabled          Boolean  @default(false) @map("sms_enabled")
+  
+  smtpHost            String?  @map("smtp_host")
+  smtpPort            String?  @map("smtp_port")
+  smtpUser            String?  @map("smtp_user")
+  smtpPassword        String?  @map("smtp_password")
+  
+  lineNotifyToken     String?  @map("line_notify_token")
+  
+  notifyAttendance    Boolean  @default(true) @map("notify_attendance")
+  notifyGrades        Boolean  @default(true) @map("notify_grades")
+  notifyAnnouncements Boolean  @default(true) @map("notify_announcements")
+  notifyPayments      Boolean  @default(false) @map("notify_payments")
+  
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_settings")
+}
+
+// ========================
 // ACADEMIC YEARS
 // ========================
 model AcademicYear {
