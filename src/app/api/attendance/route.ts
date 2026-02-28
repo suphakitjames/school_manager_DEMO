@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { sendAttendanceAlert } from "@/lib/email";
 
 export async function GET(req: Request) {
   try {
@@ -93,27 +94,39 @@ export async function POST(req: Request) {
     // However Prisma now supports upserts on compounds with nulls in some DBs, or we can do findFirst and update/create.
     // Let's use a transaction to safely handle this.
     
+    const alertsToSend: Array<{parentEmail: string, studentName: string, date: Date, status: string, className: string}> = [];
+
     await prisma.$transaction(async (tx) => {
       for (const rec of records) {
         const { studentId, date, status } = rec;
         const targetDate = new Date(date);
         targetDate.setUTCHours(0, 0, 0, 0); // ensure pure date
 
-        // Prisma unique with optional scheduleId might mean we can't use generic `upsert` easily if scheduleId is null.
-        // Let's find first, then update or create.
         const existing = await tx.attendance.findFirst({
           where: {
             studentId,
             date: targetDate,
             scheduleId: null // We assume homeroom attendance for now (no specific schedule)
+          },
+          include: {
+            student: { include: { classroom: true } }
           }
         });
+
+        let shouldAlert = false;
+        let studentInfo = null;
 
         if (existing) {
           await tx.attendance.update({
             where: { id: existing.id },
             data: { status }
           });
+          
+          // Only alert if the status actually changed to ABSENT or LATE
+          if (existing.status !== status && (status === "ABSENT" || status === "LATE")) {
+            shouldAlert = true;
+            studentInfo = existing.student;
+          }
         } else {
           await tx.attendance.create({
             data: {
@@ -123,9 +136,33 @@ export async function POST(req: Request) {
               scheduleId: null
             }
           });
+          
+          if (status === "ABSENT" || status === "LATE") {
+            shouldAlert = true;
+            studentInfo = await tx.student.findUnique({ 
+              where: { id: studentId },
+              include: { classroom: true }
+            });
+          }
+        }
+
+        if (shouldAlert && studentInfo && studentInfo.parentEmail) {
+          alertsToSend.push({
+            parentEmail: studentInfo.parentEmail,
+            studentName: `${studentInfo.firstName} ${studentInfo.lastName}`,
+            date: targetDate,
+            status: status,
+            className: studentInfo.classroom?.name || "-"
+          });
         }
       }
     });
+
+    // Fire emails asynchronously
+    Promise.all(alertsToSend.map(alert => 
+      sendAttendanceAlert(alert.parentEmail, alert.studentName, alert.date, alert.status, alert.className)
+    )).catch(err => console.error("Async email error:", err));
+
 
     return NextResponse.json({ message: "Attendance saved successfully" });
   } catch (error) {

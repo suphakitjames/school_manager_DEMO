@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { sendGradeUpdate } from "@/lib/email";
 
 // Helper for Thai Grade Scale
 function calculateGrade(score: number): { letter: string; gpa: number } {
@@ -111,13 +112,43 @@ export async function POST(req: Request) {
 
     const yid = Number(academicYearId);
 
+    // 1. Fetch info for emails
+    const academicYear = await prisma.academicYear.findUnique({ where: { id: yid } });
+    const academicYearStr = academicYear ? `${academicYear.semester}/${academicYear.year}` : String(yid);
+
+    const studentIds = Array.from(new Set(records.map((r: any) => Number(r.studentId))));
+    const subjectIds = Array.from(new Set(records.map((r: any) => Number(r.subjectId))));
+
+    const [studentsData, subjectsData, existingRecords] = await Promise.all([
+      prisma.student.findMany({ where: { id: { in: studentIds } } }),
+      prisma.subject.findMany({ where: { id: { in: subjectIds } } }),
+      prisma.gradeRecord.findMany({
+        where: {
+          academicYearId: yid,
+          studentId: { in: studentIds },
+          subjectId: { in: subjectIds }
+        }
+      })
+    ]);
+
+    const studentMap = new Map(studentsData.map(s => [s.id, s]));
+    const subjectMap = new Map(subjectsData.map(s => [s.id, s]));
+    const existingMap = new Map(existingRecords.map(r => [`${r.studentId}_${r.subjectId}`, r]));
+
+    const alertsToSend: Array<{parentEmail: string, studentName: string, subjectName: string, academicYearStr: string, totalScore: number, gradeLetter: string}> = [];
+
     // We use a transaction to upsert all grade records safely
     const operations = records.map((rec: any) => {
       let updateData: any = {};
+      const sId = Number(rec.studentId);
+      const subId = Number(rec.subjectId);
       
       const parsedScore = parseFloat(rec.totalScore);
+      let newGradeLetter = null;
+
       if (!isNaN(parsedScore)) {
         const { letter, gpa } = calculateGrade(parsedScore);
+        newGradeLetter = letter;
         updateData = {
           totalScore: parsedScore,
           gradeLetter: letter,
@@ -132,18 +163,37 @@ export async function POST(req: Request) {
         };
       }
 
+      // Check if it changed to send alert
+      if (newGradeLetter !== null) {
+         const existing = existingMap.get(`${sId}_${subId}`);
+         if (!existing || existing.totalScore !== parsedScore) {
+            const student = studentMap.get(sId);
+            const subject = subjectMap.get(subId);
+            if (student && student.parentEmail && subject) {
+               alertsToSend.push({
+                 parentEmail: student.parentEmail,
+                 studentName: `${student.firstName} ${student.lastName}`,
+                 subjectName: subject.name,
+                 academicYearStr,
+                 totalScore: parsedScore,
+                 gradeLetter: newGradeLetter
+               });
+            }
+         }
+      }
+
       return prisma.gradeRecord.upsert({
         where: {
           studentId_subjectId_academicYearId: {
-            studentId: Number(rec.studentId),
-            subjectId: Number(rec.subjectId),
+            studentId: sId,
+            subjectId: subId,
             academicYearId: yid,
           }
         },
         update: updateData,
         create: {
-          studentId: Number(rec.studentId),
-          subjectId: Number(rec.subjectId),
+          studentId: sId,
+          subjectId: subId,
           academicYearId: yid,
           ...updateData
         }
@@ -151,6 +201,13 @@ export async function POST(req: Request) {
     });
 
     await prisma.$transaction(operations);
+
+    // Fire emails asynchronously
+    if (alertsToSend.length > 0) {
+      Promise.all(alertsToSend.map(alert => 
+        sendGradeUpdate(alert.parentEmail, alert.studentName, alert.subjectName, alert.academicYearStr, alert.totalScore, alert.gradeLetter)
+      )).catch(err => console.error("Async email error:", err));
+    }
 
     return NextResponse.json({ success: true, message: "บันทึกเกรดสำเร็จ" }, { status: 200 });
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { sendPaymentReceipt } from "@/lib/email";
 // import { getServerSession } from "next-auth/next";
 // import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -48,8 +49,24 @@ export async function POST(req: Request) {
         receiptNo,
         paymentMethod,
         note,
+      },
+      include: {
+        student: true,
+        feeType: true
       }
     });
+
+    // --- Fire Email Async ---
+    if (payment.student && payment.student.parentEmail) {
+      sendPaymentReceipt(
+        payment.student.parentEmail,
+        `${payment.student.firstName} ${payment.student.lastName}`,
+        payment.feeType.name,
+        Number(payment.amountPaid),
+        payment.receiptNo,
+        payment.paymentDate
+      ).catch(err => console.error("Async email error:", err));
+    }
 
     return NextResponse.json(payment);
   } catch (error) {
