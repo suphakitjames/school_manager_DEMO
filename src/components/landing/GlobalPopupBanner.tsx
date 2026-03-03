@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 
 type PopupBanner = {
   id: number;
+  title: string | null;
   imageUrl: string;
   linkUrl: string | null;
   isActive: boolean;
@@ -12,75 +13,105 @@ type PopupBanner = {
 };
 
 export default function GlobalPopupBanner() {
-  const [banner, setBanner] = schoolPopupState();
-
-  if (!banner) return null;
-
-  const handleClose = () => {
-    // Save to sessionStorage so it doesn't show again in this tab session
-    sessionStorage.setItem(`popup_closed_${banner.id}`, "true");
-    setBanner(null);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-      <div className="relative max-w-2xl w-full max-h-[90vh] flex flex-col items-center animate-in zoom-in-95 duration-300">
-        
-        {/* Close Button above the image */}
-        <button 
-          onClick={handleClose}
-          className="absolute -top-10 right-0 sm:-right-10 w-8 h-8 flex items-center justify-center bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-md transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Banner Content */}
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl w-full flex flex-col items-center justify-center relative">
-          {banner.linkUrl ? (
-            <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="block w-full cursor-pointer hover:opacity-95 transition-opacity">
-              <img src={banner.imageUrl} alt="Announcement" className="w-full h-auto max-h-[80vh] object-contain" />
-            </a>
-          ) : (
-            <img src={banner.imageUrl} alt="Announcement" className="w-full h-auto max-h-[80vh] object-contain" />
-          )}
-        </div>
-        
-      </div>
-    </div>
-  );
-}
-
-// Custom hook to fetch the active banner once
-function schoolPopupState() {
   const [banner, setBanner] = useState<PopupBanner | null>(null);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const fetchBanner = async () => {
       try {
+        console.log("[PopupBanner] Fetching popup banner...");
         const res = await fetch("/api/popup", { cache: "no-store" });
-        if (!res.ok) return;
+        if (!res.ok) {
+          console.error("[PopupBanner] API error:", res.status);
+          return;
+        }
         const banners: PopupBanner[] = await res.json();
-        
+        console.log("[PopupBanner] Response:", banners);
+
         // Find the first active banner that hasn't expired
-        const activeBanner = banners.find(b => {
+        const activeBanner = banners.find((b) => {
           if (!b.isActive) return false;
           if (b.expiresAt && new Date(b.expiresAt) < new Date()) return false;
           return true;
         });
 
+        console.log("[PopupBanner] Active banner:", activeBanner);
+
         if (activeBanner) {
-          // Check if user already closed this specific banner in this actual session
-          const isClosed = sessionStorage.getItem(`popup_closed_${activeBanner.id}`);
+          // Check if user already closed this specific banner in this session
+          const isClosed = sessionStorage.getItem(
+            `popup_closed_${activeBanner.id}`
+          );
           if (!isClosed) {
-             setBanner(activeBanner);
+            setBanner(activeBanner);
+            setVisible(true);
+          } else {
+            console.log("[PopupBanner] Already closed by user, skipping.");
           }
         }
       } catch (error) {
-        console.error("Failed to load popup banner", error);
+        console.error("[PopupBanner] Failed to load popup banner:", error);
       }
     };
+
     fetchBanner();
   }, []);
 
-  return [banner, setBanner] as const;
+  if (!visible || !banner) return null;
+
+  const handleClose = () => {
+    sessionStorage.setItem(`popup_closed_${banner.id}`, "true");
+    setVisible(false);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.65)" }}
+      onClick={handleClose}
+    >
+      <div
+        className="relative max-w-2xl w-full"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute -top-10 right-0 w-9 h-9 flex items-center justify-center bg-white/20 hover:bg-white/40 text-white rounded-full transition-colors z-10"
+          aria-label="ปิด"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Banner Image */}
+        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
+          {banner.linkUrl ? (
+            <a
+              href={banner.linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full"
+            >
+              <img
+                src={banner.imageUrl}
+                alt={banner.title || "ประกาศ"}
+                className="w-full h-auto max-h-[80vh] object-contain"
+              />
+            </a>
+          ) : (
+            <img
+              src={banner.imageUrl}
+              alt={banner.title || "ประกาศ"}
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+          )}
+        </div>
+
+        {/* Close hint */}
+        <p className="text-center text-white/70 text-xs mt-3">
+          คลิกที่ใดก็ได้เพื่อปิด
+        </p>
+      </div>
+    </div>
+  );
 }

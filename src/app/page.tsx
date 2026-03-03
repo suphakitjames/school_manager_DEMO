@@ -9,6 +9,7 @@ import * as LucideIcons from "lucide-react";
 import NavDropdown from "@/components/landing/NavDropdown";
 import AboutDropdown from "@/components/landing/AboutDropdown";
 import AdminDropdown from "@/components/landing/AdminDropdown";
+import GlobalPopupBanner from "@/components/landing/GlobalPopupBanner";
 
 // Helper to dynamically render Lucide icons
 const DynamicIcon = ({ name, className }: { name: string, className?: string }) => {
@@ -488,6 +489,9 @@ export default async function LandingPage() {
           </p>
         </div>
       </footer>
+
+      {/* Popup Banner */}
+      <GlobalPopupBanner />
 
     </div>
   );
