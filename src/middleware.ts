@@ -73,6 +73,7 @@ export default async function middleware(req: NextRequest) {
     "/maintenance",
     "/contact",
     "/documents",
+    "/administration",
   ];
 
   // Check if the current path is public
