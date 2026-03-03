@@ -10,7 +10,8 @@ export default async function middleware(req: NextRequest) {
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/favicon.ico") ||
-    pathname.startsWith("/public/")
+    pathname.startsWith("/public/") ||
+    pathname.startsWith("/uploads/")
   ) {
     return NextResponse.next();
   }
@@ -70,6 +71,8 @@ export default async function middleware(req: NextRequest) {
     "/about",
     "/departments",
     "/maintenance",
+    "/contact",
+    "/documents",
   ];
 
   // Check if the current path is public

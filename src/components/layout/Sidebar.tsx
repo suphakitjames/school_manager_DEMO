@@ -20,6 +20,8 @@ import {
   UserCog,
   Image as ImageIcon,
   Building,
+  Monitor,
+  FolderOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +30,16 @@ const navItems = [
     label: "ภาพรวม",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    label: "Popup Banner",
+    href: "/popup-manage",
+    icon: Monitor,
+  },
+  {
+    label: "เอกสารดาวน์โหลด",
+    href: "/documents-manage",
+    icon: FolderOpen,
   },
   {
     label: "นักเรียน",

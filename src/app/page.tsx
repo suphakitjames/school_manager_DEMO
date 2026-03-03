@@ -6,7 +6,6 @@ import {
   ArrowRight, Bell, Globe, Facebook
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
-import Image from "next/image";
 import NavDropdown from "@/components/landing/NavDropdown";
 import AboutDropdown from "@/components/landing/AboutDropdown";
 import AdminDropdown from "@/components/landing/AdminDropdown";
@@ -56,6 +55,13 @@ export default async function LandingPage() {
     where: { isExecutive: true },
     orderBy: { executiveOrder: "asc" },
     include: { user: true }
+  });
+
+  // Fetch Documents
+  const documents = await prisma.document.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: "desc" },
+    take: 5,
   });
 
   // Fetch distinct departments for the dropdown nav
@@ -253,6 +259,48 @@ export default async function LandingPage() {
                  )) : (
                    <div className="col-span-2 py-6 text-sm text-slate-400">ยังไม่มีบริการ</div>
                  )}
+               </div>
+            </div>
+
+            {/* Box 3: Documents Download */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
+               <div className="bg-indigo-600 px-5 py-4 flex justify-between items-center">
+                 <h3 className="font-bold text-white flex items-center gap-2 drop-shadow-sm text-sm">
+                   <FileText className="w-5 h-5 text-white/90" />
+                   ดาวน์โหลดเอกสาร
+                 </h3>
+                 <Link href="/documents" className="text-xs text-indigo-100 hover:text-white transition-colors flex items-center gap-1">
+                   ดูทั้งหมด <ArrowRight className="w-3 h-3" />
+                 </Link>
+               </div>
+               <div className="p-3 flex-1 flex flex-col">
+                 <ul className="space-y-1.5 flex-1">
+                   {documents.length > 0 ? documents.map((doc) => (
+                     <li key={doc.id}>
+                       <a 
+                         href={doc.fileUrl} 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="flex items-start gap-3 p-3 bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-100 rounded-xl transition-colors group"
+                       >
+                         <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                           <FileText className="w-4 h-4" />
+                         </div>
+                         <div className="flex-1 min-w-0">
+                           <h4 className="text-sm font-semibold text-slate-700 group-hover:text-indigo-700 truncate">{doc.title}</h4>
+                           <span className="text-[10px] px-1.5 py-0.5 bg-slate-200/50 text-slate-500 rounded mt-1 inline-block">
+                             {doc.category === "STUDENT" ? "นักเรียน/ผู้ปกครอง" : doc.category === "TEACHER" ? "ครู/บุคลากร" : "ทั่วไป"}
+                           </span>
+                         </div>
+                       </a>
+                     </li>
+                   )) : (
+                     <li className="px-4 py-8 text-sm text-slate-400 text-center flex flex-col items-center justify-center h-full gap-2">
+                       <FileText className="w-8 h-8 text-slate-200" />
+                       ไม่มีเอกสารใหม่
+                     </li>
+                   )}
+                 </ul>
                </div>
             </div>
             

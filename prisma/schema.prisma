@@ -548,3 +548,41 @@ model ContactMessage {
 
   @@map("contact_messages")
 }
+
+// ========================
+// POPUP BANNER (Phase 1)
+// ========================
+model PopupBanner {
+  id          Int       @id @default(autoincrement())
+  title       String?
+  imageUrl    String    @map("image_url")
+  linkUrl     String?   @map("link_url")
+  isActive    Boolean   @default(true) @map("is_active")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("popup_banners")
+}
+
+// ========================
+// DOCUMENTS (Phase 1)
+// ========================
+enum DocumentCategory {
+  STUDENT
+  TEACHER
+  GENERAL
+}
+
+model Document {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String?          @db.Text
+  fileUrl     String           @map("file_url")
+  category    DocumentCategory @default(GENERAL)
+  isActive    Boolean          @default(true) @map("is_active")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@map("documents")
+}
