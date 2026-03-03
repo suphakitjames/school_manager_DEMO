@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     // Provide a unique filename
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const originalExt = path.extname(file.name) || ".png";
-    const filename = `logo-${uniqueSuffix}${originalExt}`;
+    const filename = `img-${uniqueSuffix}${originalExt}`;
 
     const uploadDir = path.join(process.cwd(), "public", "uploads");
     

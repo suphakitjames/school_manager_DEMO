@@ -13,10 +13,15 @@ export async function GET() {
       setting = await prisma.schoolSetting.create({
         data: {
           name: "โรงเรียนตัวอย่าง",
+          nameEn: "Sample School",
           email: "info@school.ac.th",
           phone: "02-123-4567",
           website: "https://school.ac.th",
           address: "123 ถนนตัวอย่าง แขวงตัวอย่าง เขตตัวอย่าง กรุงเทพมหานคร 10000",
+          vision: "วิสัยทัศน์ก้าวหน้า",
+          philosophy: "ปรัชญาจำลอง",
+          primaryColor: "#1d4ed8", // blue-700
+          secondaryColor: "#f59e0b", // amber-500
         },
       });
     }
@@ -34,7 +39,10 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, phone, website, address, logoUrl } = body;
+    const { 
+      name, nameEn, email, phone, website, address, logoUrl, 
+      vision, philosophy, facebookUrl, lineUrl, mapUrl, workingHours, heroBannerUrl, primaryColor, secondaryColor 
+    } = body;
 
     // Check if a setting exists
     const existingSetting = await prisma.schoolSetting.findFirst();
@@ -46,12 +54,8 @@ export async function PUT(req: Request) {
       updatedSetting = await prisma.schoolSetting.update({
         where: { id: existingSetting.id },
         data: {
-          name,
-          email,
-          phone,
-          website,
-          address,
-          logoUrl,
+          name, nameEn, email, phone, website, address, logoUrl,
+          vision, philosophy, facebookUrl, lineUrl, mapUrl, workingHours, heroBannerUrl, primaryColor, secondaryColor
         },
       });
     } else {
@@ -59,11 +63,8 @@ export async function PUT(req: Request) {
       updatedSetting = await prisma.schoolSetting.create({
         data: {
           name: name || "โรงเรียนตัวอย่าง",
-          email,
-          phone,
-          website,
-          address,
-          logoUrl,
+          nameEn, email, phone, website, address, logoUrl,
+          vision, philosophy, facebookUrl, lineUrl, mapUrl, workingHours, heroBannerUrl, primaryColor, secondaryColor
         },
       });
     }

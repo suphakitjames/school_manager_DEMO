@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { School, Save, Database, Users, Bell, RefreshCw, CheckCircle2 } from "lucide-react";
 import AcademicYearTab from "@/components/settings/AcademicYearTab";
 import NotificationTab from "@/components/settings/NotificationTab";
+import LandingPageTab from "@/components/settings/LandingPageTab";
+import SystemTab from "@/components/settings/SystemTab";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -15,12 +17,21 @@ export default function SettingsPage() {
   // Form state
   const [formData, setFormData] = useState({
     name: "",
+    nameEn: "",
     email: "",
     phone: "",
     website: "",
     address: "",
     logoUrl: "",
-    nameEn: "", // Adding optional English name purely for UI matching the design, though DB only has `name` currently
+    vision: "",
+    philosophy: "",
+    facebookUrl: "",
+    lineUrl: "",
+    mapUrl: "",
+    workingHours: "",
+    heroBannerUrl: "",
+    primaryColor: "#1d4ed8",
+    secondaryColor: "#f59e0b",
   });
 
   // Summary stats (placeholder for UI since we only implemented School Settings table)
@@ -40,12 +51,21 @@ export default function SettingsPage() {
         
         setFormData({
           name: data.name || "",
+          nameEn: data.nameEn || "",
           email: data.email || "",
           phone: data.phone || "",
           website: data.website || "",
           address: data.address || "",
           logoUrl: data.logoUrl || "",
-          nameEn: data.nameEn || "", // If your backend evolves to support it
+          vision: data.vision || "",
+          philosophy: data.philosophy || "",
+          facebookUrl: data.facebookUrl || "",
+          lineUrl: data.lineUrl || "",
+          mapUrl: data.mapUrl || "",
+          workingHours: data.workingHours || "",
+          heroBannerUrl: data.heroBannerUrl || "",
+          primaryColor: data.primaryColor || "#1d4ed8",
+          secondaryColor: data.secondaryColor || "#f59e0b",
         });
       } catch (error) {
         console.error("Error loading settings:", error);
@@ -148,8 +168,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Settings Tabs */}
-      <div className="flex gap-2 border-b border-slate-200 overflow-x-auto pb-0 hide-scrollbar mb-6">
-        {["ข้อมูลโรงเรียน", "ปีการศึกษา", "ผู้ใช้งาน", "การแจ้งเตือน", "ระบบ"].map((tab) => (
+      <div className="flex gap-2 border-b border-slate-200 overflow-x-auto pb-0 mb-6">
+        {["ข้อมูลทั่วไป (หน้าแรก)", "การแสดงผล (แบนเนอร์/ลิงก์)", "ปีการศึกษา", "ผู้ใช้งาน", "การแจ้งเตือน", "ระบบ"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -165,15 +185,15 @@ export default function SettingsPage() {
       </div>
 
       {/* School Info Form */}
-      {activeTab === "ข้อมูลโรงเรียน" && (
+      {activeTab === "ข้อมูลทั่วไป (หน้าแรก)" && (
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
             <School className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-800">ข้อมูลสถานศึกษา</h2>
-            <p className="text-xs text-slate-500">ข้อมูลนี้จะถูกนำไปใช้ในเอกสารและใบเสร็จต่างๆ ของระบบ</p>
+            <h2 className="text-lg font-bold text-slate-800">ข้อมูลสถานศึกษา (แสดงผลหน้าแรก)</h2>
+            <p className="text-xs text-slate-500">ข้อมูลจะถูกนำไปใช้ในหน้าเว็บไซต์หลักและเอกสารต่างๆ ของระบบ</p>
           </div>
         </div>
 
@@ -268,7 +288,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-bold text-slate-700 mb-2">ที่อยู่โรงเรียน (สำหรับออกเอกสารใบเสร็จ)</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">ที่อยู่โรงเรียน (สำหรับออกเอกสารและติดต่อ)</label>
             <textarea
               name="address"
               rows={3}
@@ -277,6 +297,137 @@ export default function SettingsPage() {
               placeholder="เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์"
               className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors resize-none"
             />
+          </div>
+
+          <div className="md:col-span-2 pt-6 mt-6 border-t border-slate-100">
+             <h3 className="text-lg font-bold text-slate-800 mb-4">ข้อมูลส่วนหน้าแรกเว็บไซต์ (Landing Page)</h3>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อสถานศึกษาภาษาอังกฤษ</label>
+            <input
+              type="text"
+              name="nameEn"
+              value={formData.nameEn}
+              onChange={handleChange}
+              placeholder="เช่น Sample School..."
+              className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-bold text-slate-700 mb-2">วิสัยทัศน์ (Vision)</label>
+            <input
+              type="text"
+              name="vision"
+              value={formData.vision}
+              onChange={handleChange}
+              placeholder="ข้อความสั้นๆ สโลแกน"
+              className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-bold text-slate-700 mb-2">ปรัชญา/พันธกิจ (Philosophy)</label>
+            <textarea
+              name="philosophy"
+              rows={2}
+              value={formData.philosophy}
+              onChange={handleChange}
+              placeholder="คำอธิบายยาวๆ เกี่ยวกับโรงเรียน"
+              className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors resize-none"
+            />
+          </div>
+
+          <div>
+             <label className="block text-sm font-bold text-slate-700 mb-2">สีหลัก (Primary Color)</label>
+             <div className="flex gap-2">
+               <input
+                 type="color"
+                 name="primaryColor"
+                 value={formData.primaryColor || "#1d4ed8"}
+                 onChange={handleChange}
+                 className="h-10 border border-slate-200 rounded-xl"
+               />
+               <input
+                 type="text"
+                 name="primaryColor"
+                 value={formData.primaryColor}
+                 onChange={handleChange}
+                 className="flex-1 px-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+               />
+             </div>
+          </div>
+
+          <div>
+             <label className="block text-sm font-bold text-slate-700 mb-2">สีรอง (Secondary Color)</label>
+             <div className="flex gap-2">
+               <input
+                 type="color"
+                 name="secondaryColor"
+                 value={formData.secondaryColor || "#f59e0b"}
+                 onChange={handleChange}
+                 className="h-10 border border-slate-200 rounded-xl"
+               />
+               <input
+                 type="text"
+                 name="secondaryColor"
+                 value={formData.secondaryColor}
+                 onChange={handleChange}
+                 className="flex-1 px-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+               />
+             </div>
+          </div>
+
+           <div className="md:col-span-2">
+            <label className="block text-sm font-bold text-slate-700 mb-2">Facebook Page URL</label>
+            <input
+              type="url"
+              name="facebookUrl"
+              value={formData.facebookUrl}
+              onChange={handleChange}
+              placeholder="https://facebook.com/..."
+              className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-bold text-slate-700 mb-2">LINE Official URL</label>
+            <input
+              type="url"
+              name="lineUrl"
+              value={formData.lineUrl}
+              onChange={handleChange}
+              placeholder="https://line.me/R/ti/p/..."
+              className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-bold text-slate-700 mb-2">เวลาทำการ</label>
+            <textarea
+              name="workingHours"
+              rows={2}
+              value={formData.workingHours}
+              onChange={handleChange}
+              placeholder="จันทร์ - ศุกร์\n08:00 - 16:30 น."
+              className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors resize-none"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-bold text-slate-700 mb-2">ลิงก์สถานที่บน Google Maps (Share Link)</label>
+            <input
+              type="text"
+              name="mapUrl"
+              value={formData.mapUrl}
+              onChange={handleChange}
+              placeholder="เช่น https://maps.app.goo.gl/..."
+              className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+            />
+            <p className="text-xs text-slate-500 mt-2">
+              นำลิงก์ที่ได้จากการกดปุ่ม "แชร์" (Share) ใน Google Maps มาวางได้เลย ระบบจะสร้างแผนที่ให้อัตโนมัติ
+            </p>
           </div>
         </div>
 
@@ -307,6 +458,8 @@ export default function SettingsPage() {
       </div>
       )}
 
+      {activeTab === "การแสดงผล (แบนเนอร์/ลิงก์)" && <LandingPageTab />}
+
       {activeTab === "ปีการศึกษา" && <AcademicYearTab />}
 
       {activeTab === "ผู้ใช้งาน" && (
@@ -322,23 +475,19 @@ export default function SettingsPage() {
 
       {activeTab === "การแจ้งเตือน" && <NotificationTab />}
 
-      {activeTab === "ระบบ" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center text-slate-500">
-          <Database className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p>การตั้งค่าระบบขั้นสูงกำลังอยู่ในระหว่างการพัฒนา</p>
-        </div>
-      )}
+      {activeTab === "ระบบ" && <SystemTab />}
 
       {/* Quick Setting Cards */}
+      {activeTab === "ข้อมูลทั่วไป (หน้าแรก)" && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {[
-          { icon: Database, title: "ปีการศึกษาปัจจุบัน", value: summaryStats.academicYear, desc: "ระบบอ้างอิงข้อมูลและการเงิน", action: "จัดการปีการศึกษา", color: "emerald" },
-          { icon: Users, title: "ผู้ใช้งานในระบบ", value: summaryStats.usersCount, desc: "นักเรียน, ครู, ผู้บริหาร และผู้ปกครอง", action: "จัดการผู้ใช้งาน", color: "cyan" },
-          { icon: Bell, title: "สถานะการแจ้งเตือน", value: summaryStats.emailNotifyStatus, desc: "แจ้งเตือนผ่าน Email/Line", action: "ตั้งค่าการแจ้งเตือน", color: "amber" },
+          { icon: Database, title: "ปีการศึกษาปัจจุบัน", value: summaryStats.academicYear, desc: "ระบบอ้างอิงข้อมูลและการเงิน", action: "จัดการปีการศึกษา", color: "emerald", onClick: () => setActiveTab("ปีการศึกษา") },
+          { icon: Users, title: "ผู้ใช้งานในระบบ", value: summaryStats.usersCount, desc: "นักเรียน, ครู, ผู้บริหาร", action: "จัดการผู้ใช้งาน", color: "cyan", onClick: () => setActiveTab("ผู้ใช้งาน") },
+          { icon: Bell, title: "สถานะการแจ้งเตือน", value: summaryStats.emailNotifyStatus, desc: "แจ้งเตือนผ่าน Email/Line", action: "ตั้งค่าการแจ้งเตือน", color: "amber", onClick: () => setActiveTab("การแจ้งเตือน") },
         ].map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.title} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:border-slate-300 transition-colors group cursor-pointer relative overflow-hidden">
+            <div key={card.title} onClick={card.onClick} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:border-slate-300 transition-colors group cursor-pointer relative overflow-hidden">
               <div className={`absolute top-0 right-0 w-24 h-24 bg-${card.color}-500/5 rounded-bl-full -z-10 transition-transform group-hover:scale-110`} />
               
               <div className="flex items-start justify-between mb-4">
@@ -358,6 +507,7 @@ export default function SettingsPage() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

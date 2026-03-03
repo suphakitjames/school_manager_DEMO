@@ -78,11 +78,23 @@ model User {
 model SchoolSetting {
   id          Int     @id @default(autoincrement())
   name        String
+  nameEn      String?  @map("name_en")
+  vision      String?  @db.Text
+  philosophy  String?  @db.Text
+  facebookUrl String?  @map("facebook_url")
+  heroBannerUrl String? @map("hero_banner_url")
+  primaryColor  String? @map("primary_color")
+  secondaryColor String? @map("secondary_color")
   logoUrl     String? @map("logo_url")
   address     String? @db.Text
   phone       String?
   email       String?
   website     String?
+  maintenanceMode Boolean @default(false) @map("maintenance_mode")
+  debugMode       Boolean @default(false) @map("debug_mode")
+  workingHours    String? @map("working_hours")
+  lineUrl         String? @map("line_url")
+  mapUrl          String? @db.Text @map("map_url")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("school_settings")
@@ -227,6 +239,8 @@ model Teacher {
   joinDate      DateTime?  @map("join_date")
   photoUrl      String?    @map("photo_url")
   isActive      Boolean    @default(true) @map("is_active")
+  isExecutive   Boolean    @default(false) @map("is_executive")
+  executiveOrder Int       @default(99) @map("executive_order")
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
@@ -234,6 +248,8 @@ model Teacher {
   classrooms    Classroom[]
   schedules     Schedule[]
   gradeRecords  GradeRecord[]
+  divisions     DivisionMember[]
+  headOfDivisions AdministrativeDivision[] @relation("DivisionHead")
 
   @@map("teachers")
 }
@@ -425,4 +441,110 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id])
 
   @@map("notifications")
+}
+
+// ========================
+// LANDING PAGE CONFIG
+// ========================
+
+model Banner {
+  id          Int      @id @default(autoincrement())
+  imageUrl    String   @map("image_url")
+  title       String?
+  subtitle    String?
+  isActive    Boolean  @default(true) @map("is_active")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("banners")
+}
+
+enum LandingLinkType {
+  QUICK_LINK
+  E_SERVICE
+}
+
+model LandingLink {
+  id          Int            @id @default(autoincrement())
+  title       String
+  url         String
+  icon        String?        // lucide-react icon name e.g. "FileText"
+  type        LandingLinkType @default(QUICK_LINK)
+  isActive    Boolean        @default(true) @map("is_active")
+  order       Int            @default(0)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@map("landing_links")
+}
+
+// ========================
+// ACTIVITY GALLERY
+// ========================
+model ActivityGallery {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?  @db.Text
+  coverImage  String?  @map("cover_image")
+  images      Json?    // Array of image URLs
+  facebookUrl String?  @map("facebook_url")
+  date        DateTime @default(now())
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("activity_galleries")
+}
+
+// ========================
+// ADMINISTRATIVE DIVISIONS (ฝ่ายบริหารงาน)
+// ========================
+model AdministrativeDivision {
+  id            Int      @id @default(autoincrement())
+  name          String   // ฝ่ายบริหารงานวิชาการ
+  nameEn        String?  @map("name_en") // Academic Affairs
+  description   String?  @db.Text
+  icon          String?  // lucide-react icon name
+  coverImage    String?  @map("cover_image")
+  headTeacherId Int?     @map("head_teacher_id")
+  order         Int      @default(0)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  headTeacher   Teacher? @relation("DivisionHead", fields: [headTeacherId], references: [id])
+  members       DivisionMember[]
+
+  @@map("administrative_divisions")
+}
+
+model DivisionMember {
+  id         Int    @id @default(autoincrement())
+  divisionId Int    @map("division_id")
+  teacherId  Int    @map("teacher_id")
+  role       String? // หัวหน้างาน, คณะกรรมการ, etc.
+  order      Int    @default(0)
+
+  division   AdministrativeDivision @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  teacher    Teacher @relation(fields: [teacherId], references: [id])
+
+  @@unique([divisionId, teacherId])
+  @@map("division_members")
+}
+
+// ========================
+// CONTACT MESSAGES
+// ========================
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String   @db.Text
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("contact_messages")
 }

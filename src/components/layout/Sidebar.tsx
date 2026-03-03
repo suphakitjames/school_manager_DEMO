@@ -18,6 +18,8 @@ import {
   ChevronRight,
   School,
   UserCog,
+  Image as ImageIcon,
+  Building,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +73,16 @@ const navItems = [
     label: "รายงานและสถิติ",
     href: "/reports",
     icon: BarChart3,
+  },
+  {
+    label: "ภาพกิจกรรม",
+    href: "/gallery-manage",
+    icon: ImageIcon,
+  },
+  {
+    label: "ฝ่ายบริหารงาน",
+    href: "/administration-manage",
+    icon: Building,
   },
   {
     label: "ผู้ใช้งาน",

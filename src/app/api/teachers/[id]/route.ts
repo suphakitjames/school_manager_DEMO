@@ -5,26 +5,52 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await req.json();
-    const { firstName, lastName, gender, phone, position, department, qualification, joinDate } = body;
+    const { firstName, lastName, gender, phone, position, department, qualification, joinDate, role, isExecutive, executiveOrder, photoUrl, isActive } = body;
+
+    const updateData: any = {
+      firstName,
+      lastName,
+      gender: gender || null,
+      phone: phone || null,
+      position: position || null,
+      department: department || null,
+      qualification: qualification || null,
+      photoUrl: photoUrl || null,
+      joinDate: joinDate ? new Date(joinDate) : null,
+    };
+
+    if (isExecutive !== undefined) {
+      updateData.isExecutive = isExecutive;
+      updateData.executiveOrder = isExecutive ? Number(executiveOrder || 99) : 99;
+    }
+
+    if (isActive !== undefined) {
+      updateData.isActive = isActive;
+    }
 
     const teacher = await prisma.teacher.update({
       where: { id: Number(id) },
-      data: {
-        firstName,
-        lastName,
-        gender: gender || null,
-        phone: phone || null,
-        position: position || null,
-        department: department || null,
-        qualification: qualification || null,
-        joinDate: joinDate ? new Date(joinDate) : null,
-      },
+      data: updateData,
     });
 
-    // Update user name too
+    // Update user name and avatar too
+    const userUpdateData: any = { 
+      name: `${firstName} ${lastName}`, 
+      phone: phone || null,
+      avatarUrl: photoUrl || null,
+    };
+
+    if (role) {
+      userUpdateData.role = role;
+    }
+
+    if (isActive !== undefined) {
+      userUpdateData.isActive = isActive;
+    }
+
     await prisma.user.update({
       where: { id: teacher.userId },
-      data: { name: `${firstName} ${lastName}`, phone: phone || null },
+      data: userUpdateData,
     });
 
     return NextResponse.json(teacher);

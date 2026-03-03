@@ -36,10 +36,24 @@ export async function GET(req: Request) {
         createdAt: true,
         updatedAt: true,
         phone: true,
+        teacher: {
+          select: {
+            isExecutive: true,
+            executiveOrder: true,
+          }
+        }
       },
     });
 
-    return NextResponse.json(users);
+    // Flatten teacher properties for the frontend
+    const formattedUsers = users.map(user => ({
+      ...user,
+      isExecutive: user.teacher?.isExecutive || false,
+      executiveOrder: user.teacher?.executiveOrder || 99,
+      teacher: undefined // remove nested object
+    }));
+
+    return NextResponse.json(formattedUsers);
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(
@@ -52,7 +66,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, password, role, isActive } = body;
+    const { name, email, password, role, isActive, isExecutive, executiveOrder } = body;
 
     if (!name || !email || !password || !role) {
       return NextResponse.json(
@@ -85,6 +99,18 @@ export async function POST(req: Request) {
         passwordHash,
         role,
         isActive: isActive !== undefined ? isActive : true,
+        // If role is TEACHER or ADMIN, create the Teacher record
+        ...( (role === "TEACHER" || role === "ADMIN") && {
+          teacher: {
+            create: {
+              teacherCode: `T${Date.now()}`, // Temporary fallback code
+              firstName: name.split(' ')[0] || name,
+              lastName: name.split(' ')[1] || "",
+              isExecutive: isExecutive || false,
+              executiveOrder: executiveOrder || 99,
+            }
+          }
+        }),
       },
       select: {
         id: true,

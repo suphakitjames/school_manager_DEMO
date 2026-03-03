@@ -45,7 +45,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { name, email, password, role, isActive } = body;
+    const { name, email, password, role, isActive, isExecutive, executiveOrder } = body;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -80,6 +80,32 @@ export async function PUT(
         isActive: true,
       },
     });
+
+    // Handle Teacher / Executive fields if role is TEACHER or ADMIN
+    if (role === "TEACHER" || role === "ADMIN" || existingUser.role === "TEACHER" || existingUser.role === "ADMIN") {
+      const teacherCount = await prisma.teacher.count({ where: { userId: id } });
+      if (teacherCount > 0) {
+        await prisma.teacher.update({
+          where: { userId: id },
+          data: {
+             isExecutive: isExecutive !== undefined ? isExecutive : undefined,
+             executiveOrder: executiveOrder !== undefined ? parseInt(executiveOrder) : undefined,
+          }
+        });
+      } else if (isExecutive) {
+         // Create teacher record if it didn't exist but they are now an executive
+         await prisma.teacher.create({
+            data: {
+              userId: id,
+              teacherCode: `T${Date.now()}`,
+              firstName: updateData.name ? updateData.name.split(' ')[0] : existingUser.name.split(' ')[0],
+              lastName: updateData.name ? updateData.name.split(' ')[1] : existingUser.name.split(' ')[1] || "",
+              isExecutive,
+              executiveOrder: executiveOrder || 99
+            }
+         });
+      }
+    }
 
     return NextResponse.json(updatedUser);
   } catch (error) {

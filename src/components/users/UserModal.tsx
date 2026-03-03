@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User } from "lucide-react";
+import { User, Shield } from "lucide-react";
 
 export interface UserFormData {
   id?: string;
@@ -8,6 +8,9 @@ export interface UserFormData {
   password?: string;
   role: string;
   isActive: boolean;
+  // Fields specifically for teachers who are executives
+  isExecutive?: boolean;
+  executiveOrder?: number;
 }
 
 interface UserModalProps {
@@ -25,6 +28,8 @@ export function UserModal({ isOpen, onClose, onSave, initialData, isLoading }: U
     password: "",
     role: "STUDENT",
     isActive: true,
+    isExecutive: false,
+    executiveOrder: 99,
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +39,8 @@ export function UserModal({ isOpen, onClose, onSave, initialData, isLoading }: U
       setFormData({
         ...initialData,
         password: "", // Always start with empty password on edit
+        isExecutive: initialData.isExecutive || false,
+        executiveOrder: initialData.executiveOrder || 99,
       });
     } else {
       setFormData({
@@ -42,6 +49,8 @@ export function UserModal({ isOpen, onClose, onSave, initialData, isLoading }: U
         password: "",
         role: "STUDENT",
         isActive: true,
+        isExecutive: false,
+        executiveOrder: 99,
       });
     }
     setError(null);
@@ -159,6 +168,45 @@ export function UserModal({ isOpen, onClose, onSave, initialData, isLoading }: U
                   <option value="false">ระงับการใช้งาน</option>
                 </select>
               </div>
+
+              {/* Show Executive settings only if user is a TEACHER or ADMIN */}
+              {(formData.role === "TEACHER" || formData.role === "ADMIN") && (
+                <>
+                  <div className="col-span-2 pt-4 border-t border-slate-100 mt-2">
+                    <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-indigo-500" />
+                      ตั้งค่าผู้บริหาร (แสดงในหน้าแรก)
+                    </h4>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">แสดงในหน้าแรก</label>
+                    <div className="flex items-center gap-3 h-[42px]">
+                      <label className="flex items-center cursor-pointer relative">
+                        <input 
+                          type="checkbox" 
+                          checked={formData.isExecutive} 
+                          onChange={e => setFormData({ ...formData, isExecutive: e.target.checked })} 
+                          className="sr-only" 
+                        />
+                        <div className={`w-11 h-6 rounded-full transition-colors ${formData.isExecutive ? 'bg-indigo-600' : 'bg-slate-300'}`}></div>
+                        <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.isExecutive ? 'translate-x-5' : ''}`}></div>
+                      </label>
+                      <span className="text-sm text-slate-600">เป็นผู้บริหาร</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">ลำดับการแสดงผล</label>
+                    <input
+                      type="number"
+                      value={formData.executiveOrder}
+                      disabled={!formData.isExecutive}
+                      onChange={(e) => setFormData({ ...formData, executiveOrder: parseInt(e.target.value) || 0 })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400"
+                      placeholder="เช่น 1, 2, 3..."
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </form>

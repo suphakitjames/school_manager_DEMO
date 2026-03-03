@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Search, Plus, Eye, Pencil, Trash2, Users, X, Save } from "lucide-react";
+import { Search, Plus, Eye, Pencil, Trash2, Users, X, Save, Upload, Crown, Shield } from "lucide-react";
+import Image from "next/image";
 
 type Classroom = { id: number; name: string };
 type Teacher = {
@@ -15,13 +16,17 @@ type Teacher = {
   position: string | null;
   department: string | null;
   qualification: string | null;
+  photoUrl: string | null;
   joinDate: string | null;
+  isExecutive: boolean;
+  executiveOrder: number;
   isActive: boolean;
   classrooms: Classroom[];
-  user: { email: string; isActive: boolean };
+  user: { email: string; isActive: boolean; role: string };
 };
 
 const genderMap: Record<string, string> = { MALE: "ชาย", FEMALE: "หญิง", OTHER: "อื่นๆ" };
+const roleMap: Record<string, string> = { SUPER_ADMIN: "ผู้ดูแลระบบ", ADMIN: "ผู้บริหาร", TEACHER: "ครูทั่วไป" };
 
 type FormData = {
   teacherCode: string;
@@ -35,12 +40,17 @@ type FormData = {
   joinDate: string;
   email: string;
   password: string;
+  role: string;
+  isExecutive: boolean;
+  executiveOrder: number | "";
+  photoUrl: string;
 };
 
 const blankForm: FormData = {
   teacherCode: "", firstName: "", lastName: "", gender: "", phone: "",
   position: "", department: "", qualification: "", joinDate: "",
-  email: "", password: "teacher1234",
+  email: "", password: "teacher1234", role: "TEACHER",
+  isExecutive: false, executiveOrder: 99, photoUrl: "",
 };
 
 export default function TeachersPage() {
@@ -91,6 +101,10 @@ export default function TeachersPage() {
       joinDate: t.joinDate ? t.joinDate.substring(0, 10) : "",
       email: t.user.email,
       password: "",
+      role: t.user.role || "TEACHER",
+      isExecutive: t.isExecutive,
+      executiveOrder: t.executiveOrder || 99,
+      photoUrl: t.photoUrl || "",
     });
     setEditId(t.id);
     setError("");
@@ -134,11 +148,40 @@ export default function TeachersPage() {
     }
   };
 
-  const f = (field: keyof FormData) => form[field] as string;
-  const sf = (field: keyof FormData, val: string) => setForm(p => ({ ...p, [field]: val }));
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new window.FormData();
+    formData.append("file", file);
+
+    try {
+      setUploadingImg(true);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setForm(p => ({ ...p, photoUrl: data.url }));
+      } else {
+        alert("อัปโหลดรูปภาพไม่สำเร็จ");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("เกิดข้อผิดพลาดในการอัปโหลด");
+    } finally {
+      setUploadingImg(false);
+    }
+  };
+
+  const f = (field: keyof FormData) => form[field];
+  const sf = (field: keyof FormData, val: any) => setForm(p => ({ ...p, [field]: val }));
 
   const activeCount = teachers.filter(t => t.isActive).length;
   const departments = [...new Set(teachers.map(t => t.department).filter(Boolean))];
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -192,7 +235,7 @@ export default function TeachersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50">
-                {["ครู", "รหัส", "ตำแหน่ง", "แผนก", "ห้องเรียน", "วุฒิการศึกษา", "สถานะ", "จัดการ"].map(h => (
+                {["ครู", "รหัส", "ตำแหน่ง", "แผนก", "สิทธิ์", "ห้องเรียน", "สถานะ", "จัดการ"].map(h => (
                   <th key={h} className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">{h}</th>
                 ))}
               </tr>
@@ -203,15 +246,28 @@ export default function TeachersPage() {
               ) : teachers.length === 0 ? (
                 <tr><td colSpan={8} className="text-center py-12 text-slate-400">ไม่พบข้อมูลครู</td></tr>
               ) : (
-                teachers.map(t => (
-                  <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                teachers.map(t => {
+                  const rLabel = roleMap[t.user?.role] || t.user?.role || "UNKNOWN";
+                  return (
+                  <tr key={t.id} className={`hover:bg-slate-50 transition-colors ${t.isExecutive ? 'bg-amber-50/30' : ''}`}>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
-                          <Users className="w-4 h-4" />
-                        </div>
+                        {t.photoUrl ? (
+                          <img src={t.photoUrl} alt="profile" width={36} height={36} className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-200" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+                            <Users className="w-4 h-4" />
+                          </div>
+                        )}
                         <div>
-                          <p className="text-sm font-semibold text-slate-800">{t.firstName} {t.lastName}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-semibold text-slate-800">{t.firstName} {t.lastName}</p>
+                            {t.isExecutive && (
+                              <div title="ผู้บริหาร">
+                                <Crown className="w-3.5 h-3.5 text-amber-500" />
+                              </div>
+                            )}
+                          </div>
                           <p className="text-xs text-slate-500">{t.phone ?? "-"}</p>
                         </div>
                       </div>
@@ -221,8 +277,10 @@ export default function TeachersPage() {
                     <td className="px-5 py-4">
                       <span className="text-sm bg-violet-50 text-violet-700 px-2.5 py-1 rounded-lg font-medium">{t.department ?? "-"}</span>
                     </td>
-                    <td className="px-5 py-4 text-sm text-slate-700 text-center">{t.classrooms.length} ห้อง</td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{t.qualification ?? "-"}</td>
+                    <td className="px-5 py-4">
+                      <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">{rLabel}</span>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-slate-700 text-center">{t.classrooms?.length || 0} ห้อง</td>
                     <td className="px-5 py-4">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${t.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
                         {t.isActive ? "ปฏิบัติงาน" : "ไม่ใช้งาน"}
@@ -242,7 +300,8 @@ export default function TeachersPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                )}
+                )
               )}
             </tbody>
           </table>
@@ -352,12 +411,12 @@ export default function TeachersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">รหัสครู *</label>
-                  <input value={f("teacherCode")} onChange={e => sf("teacherCode", e.target.value)} disabled={modalMode === "edit"}
+                  <input value={f("teacherCode") as string} onChange={e => sf("teacherCode", e.target.value)} disabled={modalMode === "edit"}
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">เพศ</label>
-                  <select value={f("gender")} onChange={e => sf("gender", e.target.value)}
+                  <select value={f("gender") as string} onChange={e => sf("gender", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <option value="">-- เลือก --</option>
                     <option value="MALE">ชาย</option>
@@ -368,59 +427,121 @@ export default function TeachersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">ชื่อ *</label>
-                  <input value={f("firstName")} onChange={e => sf("firstName", e.target.value)}
+                  <input value={f("firstName") as string} onChange={e => sf("firstName", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">นามสกุล *</label>
-                  <input value={f("lastName")} onChange={e => sf("lastName", e.target.value)}
+                  <input value={f("lastName") as string} onChange={e => sf("lastName", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">ตำแหน่ง</label>
-                  <input value={f("position")} onChange={e => sf("position", e.target.value)}
+                  <input value={f("position") as string} onChange={e => sf("position", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">แผนก</label>
-                  <input value={f("department")} onChange={e => sf("department", e.target.value)}
+                  <input value={f("department") as string} onChange={e => sf("department", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">วุฒิการศึกษา</label>
-                  <input value={f("qualification")} onChange={e => sf("qualification", e.target.value)}
+                  <input value={f("qualification") as string} onChange={e => sf("qualification", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">เบอร์โทร</label>
-                  <input value={f("phone")} onChange={e => sf("phone", e.target.value)}
+                  <input value={f("phone") as string} onChange={e => sf("phone", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">วันที่เริ่มงาน</label>
-                <input type="date" value={f("joinDate")} onChange={e => sf("joinDate", e.target.value)}
+                <input type="date" value={f("joinDate") as string} onChange={e => sf("joinDate", e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
               {modalMode === "add" && (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">อีเมล *</label>
-                    <input type="email" value={f("email")} onChange={e => sf("email", e.target.value)}
+                    <input type="email" value={f("email") as string} onChange={e => sf("email", e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">รหัสผ่าน</label>
-                    <input type="password" value={f("password")} onChange={e => sf("password", e.target.value)}
+                    <input type="password" value={f("password") as string} onChange={e => sf("password", e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                     <p className="text-xs text-slate-400 mt-1">ค่าเริ่มต้น: teacher1234</p>
                   </div>
                 </>
               )}
+
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-indigo-500" /> สิทธิ์การใช้งานและผู้บริหาร
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">ระดับสิทธิ์ (Role)</label>
+                    <select value={f("role") as string} onChange={e => sf("role", e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        {Object.entries(roleMap).map(([val, label]) => (
+                          <option key={val} value={val}>{label}</option>
+                        ))}
+                    </select>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer mt-1">
+                      <input type="checkbox" checked={f("isExecutive") as boolean} onChange={e => sf("isExecutive", e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" />
+                      กำหนดให้เป็นผู้บริหาร
+                    </label>
+                    {f("isExecutive") && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <label className="text-sm text-slate-600 shrink-0">ลำดับผู้บริหาร:</label>
+                        <input type="number" min="1" value={f("executiveOrder") as string} onChange={e => sf("executiveOrder", e.target.value ? Number(e.target.value) : "")}
+                          placeholder="เช่น 1 = ผอ."
+                          className="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-indigo-500" /> รูปโปรไฟล์ (ถ้ามี)
+                </h4>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden relative">
+                    {f("photoUrl") ? (
+                      <img src={f("photoUrl") as string} alt="preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Users className="w-6 h-6 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+                    <button 
+                      type="button" 
+                      onClick={() => fileInputRef.current?.click()} 
+                      disabled={uploadingImg}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white border border-slate-300 text-slate-700 rounded-lg shadow-sm hover:bg-slate-50 transition-colors disabled:opacity-50"
+                    >
+                      <Upload className="w-4 h-4" /> 
+                      {uploadingImg ? "กำลังอัปโหลด..." : "เลือกรูปภาพ"}
+                    </button>
+                    <p className="text-xs text-slate-500 mt-1.5">ขนาดแนะนำ: 400x400 px, ไฟล์ .jpg, .png</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 sticky bottom-0 bg-white">
               <button onClick={() => setModalMode(null)} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">

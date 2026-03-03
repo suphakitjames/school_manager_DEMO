@@ -24,10 +24,14 @@ export async function GET(req: NextRequest) {
         ],
       },
       include: {
-        user: { select: { email: true, isActive: true } },
+        user: { select: { email: true, isActive: true, role: true } },
         classrooms: true,
       },
-      orderBy: { teacherCode: "asc" },
+      orderBy: [
+        { isExecutive: "desc" },
+        { executiveOrder: "asc" },
+        { teacherCode: "asc" },
+      ],
     });
 
     return NextResponse.json(teachers);
@@ -43,7 +47,7 @@ export async function POST(req: NextRequest) {
     const {
       teacherCode, firstName, lastName, gender, phone,
       position, department, qualification, joinDate,
-      email, password,
+      email, password, role = "TEACHER", isExecutive = false, executiveOrder = 99, photoUrl
     } = body;
 
     if (!teacherCode || !firstName || !lastName || !email) {
@@ -56,9 +60,10 @@ export async function POST(req: NextRequest) {
       data: {
         email,
         passwordHash: hashedPassword,
-        role: "TEACHER",
+        role: role,
         name: `${firstName} ${lastName}`,
         phone: phone || null,
+        avatarUrl: photoUrl || null,
         isActive: true,
       },
     });
@@ -74,6 +79,9 @@ export async function POST(req: NextRequest) {
         position: position || null,
         department: department || null,
         qualification: qualification || null,
+        photoUrl: photoUrl || null,
+        isExecutive,
+        executiveOrder: isExecutive ? Number(executiveOrder) : 99,
         joinDate: joinDate ? new Date(joinDate) : null,
         isActive: true,
       },
